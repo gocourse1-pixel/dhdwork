@@ -1,0 +1,25 @@
+{
+  "name": "workspace",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "packageManager": "pnpm@10.26.1",
+  "workspaces": [
+    "artifacts/*",
+    "lib/*",
+    "scripts"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter @workspace/dhd-livraison run build && pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/api-server run start",
+    "build": "pnpm --filter @workspace/dhd-livraison run build && pnpm --filter @workspace/api-server run build",
+    "start": "pnpm --filter @workspace/api-server run start"
+  },
+  "dependencies": {
+    "@replit/connectors-sdk": "^0.4.1",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.3"
+  }
+}

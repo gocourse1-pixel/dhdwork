@@ -1,0 +1,14 @@
+- [DHD identity data](dhd-identity-data.md) — PostgreSQL is authoritative for employees, offices, admins, and strict QR identity matching.
+- [DHD session security](dhd-session-security.md) — identity sessions must be random, persisted, expiring, and revalidated against active accounts.
+- [DHD proxy workflow](dhd-proxy-workflow.md) — the API workflow must listen on the artifact proxy's configured port for frontend API calls to work.
+- [Announcement schema compatibility](announcement-schema-compatibility.md) — announcement tables may predate the current Drizzle model; preserve their existing required timing and recipient columns.
+- [DHD Web Push](dhd-web-push.md) — external notifications require VAPID secrets; subscriptions are persisted per employee/admin device.
+- [DHD auto-absence](dhd-auto-absence.md) — markAutoAbsences() runs at startup + hourly; respects restDays; safe to re-run via POST /api/admin/mark-absences.
+- [DHD PDF opening](dhd-pdf-opening.md) — PDF actions must fetch a validated blob or use a short-lived token URL so auth headers and popup blockers do not break opening.
+- [DHD Vite entry file](dhd-vite-entry.md) — runtime extensions must be linked from the artifact-root index.html; public/index.html is not Vite's development entry.
+- [DHD admin extensions and auth](dhd-admin-extension-auth.md) — global admin scripts load before login; never permanently cache an unauthenticated /auth/me result.
+- [DHD salary finalization](dhd-salary-finalization.md) — unpaid reviews are live; payment is idempotent and freezes an immutable payslip snapshot.
+- [DHD mobile scrolling](dhd-mobile-scrolling.md) — imported Admin uses a fixed viewport shell; phones must use one document scroller and never a global touch preventDefault.
+- [DHD legacy asset serving](dhd-legacy-asset-serving.md) — imported Vite bundles need every split chunk restored; serve valid public assets before backup copies and preserve MIME types.
+- [DHD notification realtime](dhd-notification-realtime.md) — persisted notifications use recipient-filtered SSE for immediate sync, with polling and Web Push as fallbacks.
+- [Workspace typecheck prerequisites](workspace-typecheck-prerequisites.md) — build workspace declaration outputs before typechecking services that import source packages.

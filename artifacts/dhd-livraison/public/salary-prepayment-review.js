@@ -1,0 +1,791 @@
+(() => {
+  "use strict";
+  let latestPreview = null;
+  let reviewRequestController = null;
+  const originalFetch = window.fetch.bind(window);
+  const formatAmount = (value) =>
+    `${Number(value || 0).toLocaleString("ar-DZ")} دج`;
+  const escapeHtml = (value) => String(value ?? "—")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+  const formatDate = (value) => {
+    if (!value) return "—";
+    const date = new Date(String(value));
+    return Number.isNaN(date.getTime())
+      ? String(value).slice(0, 10)
+      : date.toLocaleDateString("ar-DZ");
+  };
+  const isSalaryManagementRoute = () =>
+    /\/salaries(?:\/|$)|\/employees\/\d+/.test(window.location.pathname);
+  const detailTable = (title, headers, rows, empty) => `
+    <section class="dhd-review-detail-section">
+      <h3>${escapeHtml(title)}</h3>
+      <div class="dhd-review-detail-scroll">
+        <table class="dhd-review-detail-table">
+          <thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead>
+          <tbody>${rows.length
+            ? rows.map((row) => `<tr>${row.map((value) => `<td>${escapeHtml(value)}</td>`).join("")}</tr>`).join("")
+            : `<tr><td colspan="${headers.length}" class="empty">${escapeHtml(empty)}</td></tr>`}</tbody>
+        </table>
+      </div>
+    </section>
+  `;
+  const adminHeaders = (accept = "application/json") => {
+    const headers = new Headers({ Accept: accept });
+    const token = localStorage.getItem("dhd_admin_token");
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return headers;
+  };
+  const fetchAdminJson = async (path, options = {}) => {
+    const request = async (withToken) => {
+      const headers = new Headers({ Accept: "application/json" });
+      const token = withToken ? localStorage.getItem("dhd_admin_token") : "";
+      if (token) headers.set("Authorization", `Bearer ${token}`);
+      if (options.body) headers.set("Content-Type", "application/json");
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 30000);
+      const cancel = () => controller.abort();
+      options.signal?.addEventListener("abort", cancel, { once: true });
+      try {
+        const response = await originalFetch(path, {
+          ...options,
+          credentials: "include",
+          headers,
+          signal: controller.signal,
+        });
+        const body = await response.json().catch(() => null);
+        return { response, body };
+      } catch (error) {
+        if (error?.name === "AbortError") {
+          throw new Error("انتهت مهلة قراءة كشف الحساب من قاعدة البيانات");
+        }
+        throw error;
+      } finally {
+        window.clearTimeout(timeout);
+        options.signal?.removeEventListener("abort", cancel);
+      }
+    };
+
+    let result = await request(true);
+    // A stale local token must not override a still-valid admin session cookie.
+    // Retry once without the bearer token instead of leaving the review unusable.
+    if (result.response.status === 401 && localStorage.getItem("dhd_admin_token")) {
+      result = await request(false);
+    }
+    if (!result.response.ok) {
+      throw new Error(
+        result.body?.message ||
+        result.body?.error ||
+        `HTTP ${result.response.status}`,
+      );
+    }
+    return result.body;
+  };
+  const notify = (message) => {
+    const note = document.createElement("div");
+    note.className = "dhd-salary-review-toast";
+    note.textContent = message;
+    document.body.appendChild(note);
+    window.setTimeout(() => note.remove(), 3600);
+  };
+  const getSalaryContext = (button) => {
+    const row = button.closest("tr");
+    const employeeLink = row?.querySelector('a[href*="/employees/"]');
+    const employeePathId = window.location.pathname.match(/\/employees\/(\d+)/)?.[1];
+    const employeeId = Number(
+      button.dataset.employeeId ||
+      row?.dataset.employeeId ||
+      employeeLink?.getAttribute("data-employee-id") ||
+      employeeLink?.getAttribute("href")?.match(/employees\/(\d+)/)?.[1] ||
+      employeePathId,
+    );
+    const contextText = row?.textContent || button.parentElement?.textContent || "";
+    const currentDate = new Date();
+    const monthNames = {
+      يناير: "01", فبراير: "02", مارس: "03", أبريل: "04", مايو: "05",
+      يونيو: "06", يوليو: "07", أغسطس: "08", سبتمبر: "09", أكتوبر: "10",
+      نوفمبر: "11", ديسمبر: "12",
+      janvier: "01", février: "02", mars: "03", avril: "04", mai: "05",
+      juin: "06", juillet: "07", août: "08", septembre: "09",
+      octobre: "10", novembre: "11", décembre: "12",
+      january: "01", february: "02", march: "03", april: "04", may: "05",
+      june: "06", july: "07", august: "08", september: "09",
+      october: "10", november: "11", december: "12",
+    };
+    const numericPeriod = contextText.match(/(0[1-9]|1[0-2])\s*[\/-]\s*(20\d{2})/);
+    const namedMonth = Object.keys(monthNames).find((monthName) =>
+      contextText.toLocaleLowerCase().includes(monthName.toLocaleLowerCase())
+    );
+    const yearMatch = contextText.match(/20\d{2}/);
+    const period = numericPeriod || (namedMonth && yearMatch
+      ? ["", monthNames[namedMonth], yearMatch[0]]
+      : [
+        "",
+        String(currentDate.getMonth() + 1).padStart(2, "0"),
+        String(currentDate.getFullYear()),
+      ]);
+    return {
+      row,
+      employeeLink,
+      employeeId,
+      month: period[1],
+      year: Number(period[2]),
+    };
+  };
+  window.fetch = async (...args) => {
+    // The currently shipped employee portal bundle predates the /api proxy
+    // prefix for receipt confirmation. Normalize that one legacy request at
+    // the boundary so it reaches the API service instead of the Vite app.
+    const requestArgs = [...args];
+    if (
+      typeof requestArgs[0] === "string" &&
+      /^\/employee\/salaries\/\d+\/receive(?:\?|$)/.test(requestArgs[0])
+    ) {
+      requestArgs[0] = `/api${requestArgs[0]}`;
+    }
+    return originalFetch(...requestArgs);
+  };
+  function addReviewButtonBeforePayment(payButton) {
+    if (payButton.dataset.dhdReviewButtonAdded === "1") return;
+    const row = payButton.closest("tr");
+    const container = payButton.parentElement;
+    if (!row || !container) return;
+
+    const reviewButton = document.createElement("button");
+    reviewButton.type = "button";
+    reviewButton.className = "dhd-salary-review-trigger";
+    reviewButton.textContent = "فتح تفاصيل كشف الراتب";
+    reviewButton.title = "اعرض تفاصيل الراتب قبل الدفع أو التأجيل";
+    reviewButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      void showGeneratedSalaryReview(payButton);
+    });
+    container.insertBefore(reviewButton, payButton);
+    // Do not leave a direct payment action visible before the PostgreSQL
+    // details have been loaded and reviewed.
+    payButton.hidden = true;
+    payButton.dataset.dhdReviewButtonAdded = "1";
+  }
+
+  function addStandaloneReviewButtons() {
+    document.querySelectorAll("button").forEach((payButton) => {
+      const label = payButton.textContent?.trim() || "";
+      if (label !== "تحويل" && label !== "دفع") return;
+      // Keep the imported React handler and label intact. The review action
+      // is a separate button so payment remains available after inspection.
+      addReviewButtonBeforePayment(payButton);
+    });
+  }
+  function addSalaryDetailsButtons() {
+    if (!isSalaryManagementRoute()) return;
+    document.querySelectorAll("button").forEach((button) => {
+      const label = button.textContent?.trim() || "";
+      if (!/^(طباعة|طباعة الكشف|طباعة كشف الراتب|كشف PDF|كشف الراتب|print|print payslip|bulletin)$/i.test(label)) return;
+      if (button.dataset.dhdDetailsButtonAdded === "1") return;
+      const detailsButton = document.createElement("button");
+      detailsButton.type = "button";
+      detailsButton.className = "dhd-salary-review-trigger";
+      detailsButton.textContent = "فتح صفحة كشف الراتب";
+      detailsButton.title = "عرض كشف الراتب داخل النظام";
+      detailsButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void showGeneratedSalaryReview(button);
+      });
+      button.hidden = true;
+      button.dataset.dhdDetailsButtonAdded = "1";
+      button.parentElement?.insertBefore(detailsButton, button);
+    });
+  }
+  function addGeneratedSalaryGuards() {
+    document.querySelectorAll("tr button.bg-emerald-600").forEach((button) => {
+      const label = button.textContent?.trim() || "";
+      if (label.includes("مراجعة") || label.includes("تأكيد")) return;
+      addReviewButtonBeforePayment(button);
+    });
+  }
+  async function postponeSalary(button) {
+    const context = getSalaryContext(button);
+    if (!context.employeeId) {
+      notify("تعذر تحديد الموظف لتأجيل الراتب");
+      return;
+    }
+    const rawDays = window.prompt("تأجيل الراتب بعدد الأيام:", "1");
+    if (rawDays === null) return;
+    const days = Number(rawDays);
+    if (!Number.isInteger(days) || days < 1 || days > 31) {
+      notify("أدخل عدد أيام صحيحًا بين 1 و31");
+      return;
+    }
+    button.disabled = true;
+    const oldText = button.textContent;
+    button.textContent = "جارٍ التأجيل...";
+    try {
+      const salaryRows = await fetchAdminJson(`/api/salaries?employeeId=${context.employeeId}`);
+      let salary = salaryRows.find((item) =>
+        String(item.month).padStart(2, "0") === context.month &&
+        Number(item.year) === context.year &&
+        item.status !== "paid" &&
+        item.status !== "received"
+      );
+      if (!salary) {
+        salary = await fetchAdminJson("/api/salaries/single", {
+          method: "POST",
+          body: JSON.stringify({
+            employeeId: context.employeeId,
+            month: context.month,
+            year: context.year,
+          }),
+        });
+      }
+      if (!salary?.id) throw new Error("تعذر إنشاء سجل الراتب");
+      const postponedUntil = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+      await fetchAdminJson(`/api/salaries/${salary.id}/postpone`, {
+        method: "PATCH",
+        body: JSON.stringify({ postponedUntil }),
+      });
+      notify(`تم تأجيل الراتب لمدة ${days} يوم`);
+      window.setTimeout(() => location.reload(), 500);
+    } catch (error) {
+      console.error("[salary-review] postpone failed", error);
+      notify(error.message || "تعذر تأجيل الراتب");
+      button.disabled = false;
+      button.textContent = oldText;
+    }
+  }
+  function closeGeneratedReview() {
+    reviewRequestController?.abort();
+    reviewRequestController = null;
+    const overlay = document.querySelector("[data-dhd-generated-review-overlay]");
+    if (overlay) {
+      const focusedElement = overlay.querySelector(":focus");
+      overlay.remove();
+      if (focusedElement && document.contains(focusedElement)) {
+        focusedElement.blur();
+      }
+    }
+  }
+  async function showGeneratedSalaryReview(payButton) {
+    closeGeneratedReview();
+    const context = getSalaryContext(payButton);
+    if (!context.employeeId) {
+      notify("تعذر تحديد بيانات الراتب للمراجعة");
+      return;
+    }
+    const { employeeId, month, year, employeeLink } = context;
+    const requestController = new AbortController();
+    reviewRequestController = requestController;
+    const overlay = document.createElement("div");
+    overlay.dataset.dhdGeneratedReviewOverlay = "1";
+    overlay.className = "dhd-generated-review-overlay";
+    overlay.innerHTML = `
+      <section role="dialog" aria-modal="true" aria-label="مراجعة كشف الراتب قبل التحويل" class="dhd-generated-review-dialog">
+        <header>
+          <div>
+            <h2>مراجعة كشف الراتب قبل التحويل</h2>
+            <p class="dhd-generated-review-name"></p>
+          </div>
+          <button type="button" class="dhd-generated-review-close" aria-label="إغلاق">×</button>
+        </header>
+        <div class="dhd-generated-review-body">
+          <p class="dhd-generated-review-loading">جارٍ تحميل الحساب الحي من PostgreSQL...</p>
+        </div>
+      </section>
+    `;
+    overlay.querySelector(".dhd-generated-review-name").textContent =
+      `${employeeLink?.textContent?.trim() || "الموظف"} — ${month}/${year}`;
+    overlay.querySelector(".dhd-generated-review-close").addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeGeneratedReview();
+    });
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) closeGeneratedReview();
+    });
+    document.body.appendChild(overlay);
+    try {
+      // The preview endpoint already returns the complete live calculation and
+      // the persisted salary when one exists. Do not make a second list call
+      // here: a failure in that unrelated request used to hide a valid review.
+      const preview = await fetchAdminJson(
+        `/api/salaries/preview?employeeId=${encodeURIComponent(employeeId)}&month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}`,
+        { signal: requestController.signal },
+      );
+      const salary = preview?.salary && preview.salary.id != null
+        ? preview.salary
+        : null;
+      latestPreview = preview;
+      const summary = preview.summary || preview;
+       if (!document.contains(overlay) || requestController.signal.aborted) return;
+      if (preview.previewState === "paid" && salary?.status !== "paid" && salary?.status !== "received") {
+        throw new Error("تم دفع هذا الراتب بالفعل");
+      }
+       const employee = preview.employee || {};
+      const attendanceRecords = Array.isArray(preview.attendance)
+        ? preview.attendance
+        : Array.isArray(preview.attendanceRecords)
+          ? preview.attendanceRecords
+          : [];
+      const violations = Array.isArray(preview.violations) ? preview.violations : [];
+      const bonuses = Array.isArray(preview.bonusRecords)
+        ? preview.bonusRecords
+        : Array.isArray(preview.bonuses) ? preview.bonuses : [];
+      const advances = Array.isArray(preview.advances) ? preview.advances : [];
+      const leaveRequests = Array.isArray(preview.leaveRequests) ? preview.leaveRequests : [];
+      const vacationRequests = Array.isArray(preview.vacationRequests) ? preview.vacationRequests : [];
+      const absenceCount = attendanceRecords.filter((record) => record.isAbsent).length;
+      const absenceRate = absenceCount
+        ? Number(summary.absenceDeduction || 0) / absenceCount
+        : 0;
+      const detailMarkup = [
+        detailTable(
+          "تفاصيل الحضور والغياب",
+           ["التاريخ", "الحالة", "الدخول", "الخروج", "ساعات العمل", "التأخير", "خصم التأخير", "خصم الغياب"],
+          attendanceRecords.map((record) => [
+            formatDate(record.date),
+            record.isAbsent ? "غائب" : Number(record.lateMinutes || 0) > 0 ? "متأخر" : "حاضر",
+            record.checkInTime || "—",
+            record.checkOutTime || "—",
+             `${(Number(record.workedMinutes || 0) / 60).toFixed(2)} ساعة`,
+            Number(record.lateMinutes || 0) > 0 ? `${record.lateMinutes} دقيقة` : "—",
+             Number(record.lateDeduction || 0) > 0 ? `- ${formatAmount(record.lateDeduction)}` : "—",
+            record.isAbsent ? `- ${formatAmount(absenceRate)}` : "—",
+          ]),
+          "لا توجد سجلات حضور لهذه الفترة",
+        ),
+        detailTable(
+           "كل الخصومات وأسبابها",
+           ["البند", "السبب / التفاصيل", "المبلغ"],
+           [
+             ...attendanceRecords.filter((record) => Number(record.lateMinutes || 0) > 0).map((record) => [
+               "خصم التأخير",
+               `تأخير بتاريخ ${formatDate(record.date)} لمدة ${record.lateMinutes || 0} دقيقة`,
+               `- ${formatAmount(record.lateDeduction)}`,
+             ]),
+             ...attendanceRecords.filter((record) => record.isAbsent).map((record) => [
+               "خصم الغياب",
+               record.notes || `غياب بتاريخ ${formatDate(record.date)}`,
+               `- ${formatAmount(absenceRate)}`,
+             ]),
+             ...advances.map((advance) => ["خصم سلفة", advance.reason || "سلفة معتمدة", `- ${formatAmount(advance.amount)}`]),
+             ...violations.map((violation) => [
+               "مخالفة",
+               `${violation.violationType || violation.type || "مخالفة"}: ${violation.reason || violation.notes || "بدون سبب موضح"}`,
+               `- ${formatAmount(violation.amount || violation.deductionAmount)}`,
+             ]),
+           ],
+           "لا توجد خصومات مسجلة",
+        ),
+         detailTable(
+           "المخالفات ومبالغها",
+           ["التاريخ", "النوع", "السبب", "المبلغ"],
+           violations.map((violation) => [
+             formatDate(violation.violationDate || violation.createdAt),
+             violation.violationType || violation.type || "مخالفة",
+             violation.reason || violation.notes || "بدون سبب موضح",
+             formatAmount(violation.amount || violation.deductionAmount),
+           ]),
+           "لا توجد مخالفات",
+         ),
+        detailTable(
+          "الإضافات والمكافآت",
+          ["التاريخ", "السبب", "المبلغ"],
+          bonuses.map((bonus) => [
+            formatDate(bonus.date || bonus.createdAt),
+            bonus.reason || bonus.notes || "مكافأة",
+            `+ ${formatAmount(bonus.amount)}`,
+          ]),
+          "لا توجد إضافات أو مكافآت",
+        ),
+        detailTable(
+          "السلف المعتمدة",
+          ["التاريخ", "السبب", "المبلغ"],
+          advances.map((advance) => [
+            formatDate(advance.requestedAt || advance.createdAt),
+            advance.reason || "سلفة",
+            `- ${formatAmount(advance.amount)}`,
+          ]),
+          "لا توجد سلف معتمدة",
+        ),
+        detailTable(
+          "الإجازات والعطل المعتمدة",
+          ["النوع", "من", "إلى", "السبب / الملاحظة"],
+          [
+            ...leaveRequests.map((request) => [
+              request.leaveType || "إجازة",
+              formatDate(request.startDate),
+              formatDate(request.endDate || request.startDate),
+              request.description || request.adminNote || "—",
+            ]),
+            ...vacationRequests.map((request) => [
+              "عطلة",
+              formatDate(request.startDate),
+              formatDate(request.endDate || request.startDate),
+              request.description || request.adminNote || "—",
+            ]),
+          ],
+          "لا توجد إجازات أو عطل معتمدة خلال هذه الفترة",
+        ),
+      ].join("");
+      const body = overlay.querySelector(".dhd-generated-review-body");
+      body.innerHTML = `
+        <div class="dhd-salary-review-state">
+          <strong>قيد المراجعة قبل التحويل</strong>
+          <span>الحساب أدناه حي من قاعدة البيانات، ولن يتم تسجيل التحويل إلا بعد الضغط على زر التأكيد النهائي.</span>
+        </div>
+         <div class="dhd-generated-review-employee">
+           <div><span>اسم الموظف</span><b>${escapeHtml(`${employee.firstName || ""} ${employee.lastName || ""}`.trim() || employeeLink?.textContent?.trim() || "—")}</b></div>
+           <div><span>الرقم التسلسلي</span><b>${escapeHtml(employee.serialNumber || "—")}</b></div>
+           <div><span>المنصب</span><b>${escapeHtml(employee.position || "—")}</b></div>
+           <div><span>المكتب</span><b>${escapeHtml(employee.officeName || "—")}</b></div>
+         </div>
+        <div class="dhd-generated-review-breakdown">
+          <div><span>الراتب الأساسي</span><b>${formatAmount(summary.baseSalary)}</b></div>
+          <div><span>أيام الحضور</span><b>${summary.presentDays || 0} يوم</b></div>
+          <div><span>الغياب</span><b class="negative">${summary.absentDays || 0} يوم (${formatAmount(summary.absenceDeduction)})</b></div>
+          <div><span>التأخير</span><b class="negative">${summary.lateMinutes || 0} دقيقة (${formatAmount(summary.lateDeduction)})</b></div>
+          <div><span>الوقت الإضافي</span><b class="positive">+ ${formatAmount(summary.overtimeBonus)} (${Number(summary.overtimeHours || 0).toFixed(1)} ساعة)</b></div>
+          <div><span>المخالفات</span><b class="negative">${formatAmount(summary.violationTotal)}</b></div>
+          <div><span>السلف</span><b class="negative">${formatAmount(summary.advanceTotal)}</b></div>
+          <div><span>الزيادات والمكافآت</span><b class="positive">+ ${formatAmount(Number(summary.bonusTotal || 0) + Number(summary.overtimeBonus || 0))}</b></div>
+           <div><span>ساعات العمل</span><b>${Number(summary.workedHours || 0).toFixed(2)} ساعة</b></div>
+          <div><span>خصم الغياب المطبق</span><b class="negative">- ${formatAmount(summary.absenceDeduction)}</b></div>
+           <div><span>خصومات أخرى</span><b class="negative">- ${formatAmount(summary.otherDeductions)}</b></div>
+          <div><span>إجمالي الخصومات</span><b class="negative">- ${formatAmount(summary.totalDeductions)}</b></div>
+          <div class="net"><span>صافي المبلغ المستحق</span><b>${formatAmount(summary.finalSalary)}</b></div>
+        </div>
+        <div class="dhd-generated-review-details">${detailMarkup}</div>
+        <div class="dhd-generated-review-actions"></div>
+      `;
+       const actions = body.querySelector(".dhd-generated-review-actions");
+       const isPaid = salary?.status === "paid" || salary?.status === "received";
+       if (isPaid) {
+         actions.innerHTML = `<div class="dhd-salary-review-state"><strong>${salary.status === "received" ? "تم استلام الراتب" : "تم دفع الراتب"}</strong><span>لا توجد إجراءات إدارية متاحة لكشف راتب نهائي.</span></div>`;
+       } else {
+         const postponeButton = document.createElement("button");
+         postponeButton.type = "button";
+         postponeButton.className = "dhd-salary-review-trigger";
+         postponeButton.textContent = "تأجيل";
+         postponeButton.addEventListener("click", (event) => {
+           event.preventDefault();
+           event.stopPropagation();
+           void postponeSalary(payButton);
+         });
+         const confirmButton = document.createElement("button");
+         confirmButton.type = "button";
+         confirmButton.className = "dhd-generated-review-confirm";
+         confirmButton.textContent = "دفع";
+         confirmButton.addEventListener("click", async () => {
+           confirmButton.disabled = true;
+           confirmButton.textContent = "جارٍ تنفيذ التحويل...";
+           try {
+             let salaryId = salary?.id;
+             if (!salaryId) {
+               const created = await fetchAdminJson("/api/salaries/single", {
+                 method: "POST",
+                 body: JSON.stringify({ employeeId, month, year }),
+               });
+               salaryId = created?.id || created?.salary?.id;
+             }
+             if (!salaryId) throw new Error("تعذر إنشاء سجل الراتب");
+             await fetchAdminJson(`/api/salaries/${salaryId}/pay`, { method: "PATCH" });
+             closeGeneratedReview();
+             notify("تم تحويل الراتب بنجاح وتجميد كشفه النهائي");
+             window.setTimeout(() => location.reload(), 700);
+           } catch (error) {
+             console.error("[salary-review] transfer failed", error);
+             notify(error.message || "تعذر تنفيذ التحويل");
+             confirmButton.disabled = false;
+             confirmButton.textContent = "دفع";
+           }
+         });
+         actions.append(postponeButton, confirmButton);
+       }
+    } catch (error) {
+      if (requestController.signal.aborted || !document.contains(overlay)) return;
+      console.error("[salary-review] generated salary review failed", error);
+      const errorBody = overlay.querySelector(".dhd-generated-review-body");
+      if (errorBody) {
+        errorBody.innerHTML =
+          `<p class="dhd-generated-review-error">تعذر تحميل مراجعة الراتب: ${escapeHtml(
+            error?.name === "AbortError" ? "انتهت مهلة الاتصال. حاول مجددًا." : error?.message || "خطأ غير معروف",
+          )}</p>`;
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className = "dhd-generated-review-action";
+        retry.textContent = "إعادة المحاولة";
+        retry.addEventListener("click", () => showGeneratedSalaryReview(payButton));
+        errorBody.appendChild(retry);
+      }
+    } finally {
+      if (reviewRequestController === requestController) reviewRequestController = null;
+    }
+  }
+  function decoratePaymentDialog() {
+    if (!latestPreview) return;
+    const dialogs = Array.from(document.querySelectorAll('[role="dialog"]'));
+    const dialog = dialogs.find((item) => item.textContent?.includes("صرف الراتب") || item.textContent?.includes("الراتب"));
+    if (!dialog) return;
+    const previous = dialog.querySelector("[data-dhd-salary-review-summary]");
+    if (previous?.dataset.previewAt === String(latestPreview.summary?.calculatedAt || "")) return;
+    previous?.remove();
+    const confirmButton = Array.from(dialog.querySelectorAll("button"))
+      .find((button) => button.textContent?.includes("تأكيد") || button.textContent?.includes("دفع") || button.textContent?.includes("تحويل"));
+    if (confirmButton) confirmButton.textContent = "تحويل";
+    const footer = confirmButton?.parentElement;
+    if (!footer) return;
+    const summary = latestPreview.summary || latestPreview;
+    const box = document.createElement("section");
+    box.dataset.dhdSalaryReviewSummary = "1";
+    box.dataset.previewAt = String(summary.calculatedAt || "");
+    box.className = "dhd-salary-review-summary";
+    box.innerHTML = `
+      <div class="dhd-salary-review-state">
+        <strong>قيد المراجعة قبل التحويل</strong>
+        <span>عرض التفاصيل لا يغيّر حالة الراتب إلى مدفوع.</span>
+      </div>
+      <div class="dhd-salary-review-totals">
+        <div><span>أيام الحضور</span><b>${summary.presentDays || 0}</b></div>
+        <div><span>الغياب</span><b>${summary.absentDays || 0}</b></div>
+        <div><span>التأخير</span><b>${formatAmount(summary.lateDeduction)}</b></div>
+        <div><span>المخالفات</span><b>${formatAmount(summary.violationTotal)}</b></div>
+        <div><span>السلف</span><b>${formatAmount(summary.advanceTotal)}</b></div>
+        <div><span>الزيادات</span><b>${formatAmount(summary.bonusTotal)}</b></div>
+        <div><span>إجمالي الخصومات</span><b>${formatAmount(summary.totalDeductions)}</b></div>
+        <div><span>صافي المستحق</span><b>${formatAmount(summary.finalSalary)}</b></div>
+      </div>
+    `;
+    dialog.insertBefore(box, footer);
+  }
+  function enhanceSalaryReview() {
+    if (!location.pathname.includes("/salaries")) return;
+    addStandaloneReviewButtons();
+    addSalaryDetailsButtons();
+    addGeneratedSalaryGuards();
+    decoratePaymentDialog();
+  }
+  const style = document.createElement("style");
+  style.textContent = `
+    .dhd-salary-review-trigger {
+      min-height: 2rem;
+      border: 1px solid #f59e0b;
+      border-radius: .5rem;
+      padding: .35rem .7rem;
+      background: #fff7ed;
+      color: #9a3412;
+      font: inherit;
+      font-size: .75rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .dhd-salary-review-trigger:hover { background: #ffedd5; }
+    .dhd-salary-review-summary {
+      display: grid;
+      gap: .75rem;
+      margin-top: .25rem;
+      border: 1px solid #fed7aa;
+      border-radius: .75rem;
+      padding: .8rem;
+      background: #fffaf3;
+    }
+    .dhd-salary-review-state {
+      display: grid;
+      gap: .2rem;
+      color: #7c2d12;
+      font-size: .78rem;
+    }
+    .dhd-salary-review-state span { color: #78716c; font-weight: 500; }
+    .dhd-salary-review-totals { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
+    .dhd-salary-review-totals > div {
+      display: grid;
+      gap: .15rem;
+      border-radius: .55rem;
+      padding: .5rem .6rem;
+      background: white;
+      color: #78716c;
+      font-size: .72rem;
+    }
+    .dhd-salary-review-totals b { color: #be123c; font-size: .85rem; }
+    .dhd-salary-review-toast {
+      position: fixed;
+      inset-inline: 1rem;
+      bottom: 1.25rem;
+      z-index: 99999;
+      max-width: 28rem;
+      margin-inline: auto;
+      border-radius: .7rem;
+      padding: .8rem 1rem;
+      background: #7f1d1d;
+      color: white;
+      text-align: center;
+      font-weight: 700;
+      box-shadow: 0 12px 30px rgb(0 0 0 / .22);
+    }
+    .dhd-generated-review-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+      background: rgb(15 23 42 / .58);
+      backdrop-filter: blur(3px);
+    }
+    .dhd-generated-review-dialog {
+      width: min(100%, 36rem);
+      max-height: calc(100dvh - 2rem);
+      overflow: auto;
+      border-radius: 1rem;
+      padding: 1rem;
+      background: hsl(var(--background, 0 0% 100%));
+      color: hsl(var(--foreground, 222 47% 11%));
+      box-shadow: 0 24px 70px rgb(0 0 0 / .28);
+    }
+    .dhd-generated-review-dialog > header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .dhd-generated-review-dialog h2 { margin: 0; font-size: 1.15rem; }
+    .dhd-generated-review-dialog header p { margin: .2rem 0 0; color: #64748b; font-size: .8rem; }
+    .dhd-generated-review-close {
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      font-size: 1.6rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .dhd-generated-review-body { display: grid; gap: .85rem; }
+    .dhd-generated-review-employee {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: .5rem;
+      border: 1px solid #e2e8f0;
+      border-radius: .75rem;
+      padding: .65rem;
+      background: #f8fafc;
+    }
+    .dhd-generated-review-employee > div { display: grid; gap: .15rem; }
+    .dhd-generated-review-employee span { color: #64748b; font-size: .72rem; }
+    .dhd-generated-review-employee b { color: #1e293b; font-size: .8rem; }
+    .dhd-generated-review-loading,
+    .dhd-generated-review-error { margin: 1rem 0; color: #64748b; text-align: center; }
+    .dhd-generated-review-error { color: #b91c1c; }
+    .dhd-generated-review-breakdown {
+      display: grid;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      border-radius: .75rem;
+    }
+    .dhd-generated-review-breakdown > div {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: .6rem .8rem;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: .82rem;
+    }
+    .dhd-generated-review-breakdown > div:last-child { border-bottom: 0; }
+    .dhd-generated-review-breakdown span { color: #64748b; }
+    .dhd-generated-review-breakdown .positive { color: #15803d; }
+    .dhd-generated-review-breakdown .negative { color: #be123c; }
+    .dhd-generated-review-breakdown .net { background: #fff7ed; font-weight: 800; }
+    .dhd-generated-review-breakdown .net b { color: #c2410c; font-size: 1rem; }
+    .dhd-generated-review-details { display: grid; gap: .8rem; }
+    .dhd-review-detail-section {
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      border-radius: .75rem;
+      background: #fff;
+    }
+    .dhd-review-detail-section h3 {
+      margin: 0;
+      padding: .65rem .8rem;
+      background: #f8fafc;
+      color: #334155;
+      font-size: .82rem;
+    }
+    .dhd-review-detail-scroll { overflow-x: auto; }
+    .dhd-review-detail-table {
+      width: 100%;
+      min-width: 32rem;
+      border-collapse: collapse;
+      font-size: .74rem;
+    }
+    .dhd-review-detail-table th,
+    .dhd-review-detail-table td {
+      padding: .5rem .65rem;
+      border-top: 1px solid #f1f5f9;
+      text-align: right;
+      vertical-align: top;
+    }
+    .dhd-review-detail-table th { color: #64748b; font-weight: 700; white-space: nowrap; }
+    .dhd-review-detail-table td { color: #334155; }
+    .dhd-review-detail-table td:nth-last-child(1) { font-weight: 700; white-space: nowrap; }
+    .dhd-review-detail-table .empty { color: #94a3b8; text-align: center; }
+    .dhd-generated-review-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: .65rem; }
+    .dhd-generated-review-confirm {
+      min-height: 2.35rem;
+      border: 0;
+      border-radius: .55rem;
+      padding: .45rem .7rem;
+      background: #059669;
+      color: white;
+      font: inherit;
+      font-size: .78rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .dhd-generated-review-confirm:hover { background: #047857; }
+    .dhd-generated-review-confirm:disabled { opacity: .65; cursor: wait; }
+    @media (max-width: 640px) {
+      .dhd-salary-review-totals { grid-template-columns: 1fr 1fr; }
+      .dhd-generated-review-employee { grid-template-columns: 1fr; }
+      .dhd-salary-review-trigger { width: 100%; }
+      .dhd-generated-review-actions { grid-template-columns: 1fr; }
+    }
+  `;
+  document.head.appendChild(style);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && document.querySelector("[data-dhd-generated-review-overlay]")) {
+      closeGeneratedReview();
+    }
+  });
+  document.addEventListener("click", (event) => {
+    const clickedButton = event.target.closest?.("button");
+    if (clickedButton?.closest("[data-dhd-generated-review-overlay]")) return;
+    const label = clickedButton?.textContent?.trim() ||
+      clickedButton?.getAttribute("aria-label")?.trim() ||
+      clickedButton?.getAttribute("title")?.trim() ||
+      "";
+    const isPostpone = clickedButton && /^(تأجيل|تأجيل الدفع|تأجيل الراتب|Postpone)$/i.test(label);
+    const isPdfAction = clickedButton && /^(طباعة|طباعة الكشف|طباعة كشف الراتب|كشف PDF|كشف الراتب|print|print payslip|imprimer le bulletin|bulletin)$/i.test(label);
+    if (isPdfAction && isSalaryManagementRoute()) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      void showGeneratedSalaryReview(clickedButton);
+      return;
+    }
+    // The React salary page already owns the review and payment flow. Never
+    // intercept those buttons here: doing so prevents its modal mutation and
+    // turns a normal payment click into a second, fragile review implementation.
+    if (!isPostpone || !location.pathname.includes("/salaries")) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    postponeSalary(clickedButton);
+  }, true);
+  window.addEventListener("popstate", () => {
+    if (document.querySelector("[data-dhd-generated-review-overlay]")) {
+      closeGeneratedReview();
+    }
+  });
+})();

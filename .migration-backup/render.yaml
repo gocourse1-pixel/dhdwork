@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: dhd-livraison-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev && npm run build --workspace=@workspace/api-server
+    startCommand: npm run start --workspace=@workspace/api-server
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false

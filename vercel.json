@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "installCommand": "pnpm install --frozen-lockfile --prod=false",
+  "buildCommand": "pnpm --filter @workspace/dhd-livraison run build",
+  "outputDirectory": "artifacts/dhd-livraison/dist/public",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://dhdwork-ow11.onrender.com/api/:path*" },
+    { "source": "/employee/:path*", "destination": "https://dhdwork-ow11.onrender.com/employee/:path*" },
+    { "source": "/healthz", "destination": "https://dhdwork-ow11.onrender.com/healthz" },
+    { "source": "/((?!.*\\.).*)", "destination": "/index.html" }
+  ]
+}

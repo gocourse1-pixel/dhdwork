@@ -1,0 +1,1597 @@
+/* Shared notification state styles for the imported employee bundle. */
+.dhd-legacy-notification {
+  position: relative;
+  transition: background-color .18s ease, color .18s ease;
+}
+
+.dhd-legacy-notification-unread {
+  color: #b42318 !important;
+  background: #fff1f0 !important;
+  border-inline-start: 3px solid #dc4c45;
+}
+
+.dhd-legacy-notification-read {
+  color: #217346 !important;
+  background: #effaf2 !important;
+  border-inline-start: 3px solid #43a66f;
+}
+
+.dhd-employee-notification-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-inline-start: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: #fff;
+  background: #dc4c45;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dhd-legacy-notification-delete,
+.dhd-legacy-mark-all {
+  border: 0;
+  border-radius: 7px;
+  padding: 4px 8px;
+  color: #b42318;
+  background: #ffe2df;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dhd-legacy-notification-delete {
+  position: absolute;
+  inset-inline-end: 8px;
+  top: 8px;
+}
+
+.dhd-legacy-mark-all {
+  margin-inline-start: auto;
+  color: #217346;
+  background: #e2f4e8;
+}
+
+.dhd-admin-notification-unread {
+  color: #b42318 !important;
+  background: #fff1f0 !important;
+  border-inline-start: 3px solid #dc4c45;
+}
+
+.dhd-admin-notification-read {
+  color: #217346 !important;
+  background: #effaf2 !important;
+  border-inline-start: 3px solid #43a66f;
+}
+
+.dhd-admin-notification-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.dhd-admin-notification-read-button,
+.dhd-admin-notification-delete-button {
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dhd-admin-notification-read-button {
+  color: #217346;
+  background: #e2f4e8;
+}
+
+.dhd-admin-notification-delete-button {
+  color: #b42318;
+  background: #ffe2df;
+}
+
+.dhd-admin-notification-delete-all {
+  margin-inline-start: 0.5rem;
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 6px;
+  color: #b42318;
+  background: #ffe2df;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dhd-admin-notification-delete-all:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.dhd-admin-bell-unread svg {
+  color: #dc4c45 !important;
+}
+
+.dhd-admin-bell-count {
+  position: absolute;
+  top: -0.125rem;
+  right: -0.125rem;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 4px;
+  color: #fff;
+  background: #dc4c45;
+  box-shadow: 0 0 0 2px hsl(var(--background));
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dhd-admin-notification-read-button:disabled,
+.dhd-admin-notification-delete-button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+/*
+ * DHD Livraison — admin mobile experience
+ *
+ * The admin application is served from the imported production bundle in
+ * public/assets. This stylesheet is intentionally additive: it only adjusts
+ * layout, sizing, touch targets and scrolling, leaving the existing React
+ * behavior and API contracts untouched.
+ */
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+}
+
+html,
+body,
+#root,
+#root > div {
+  box-sizing: border-box;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+html,
+body {
+  min-height: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior-y: none;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  touch-action: pan-y;
+}
+
+#root {
+  min-height: 100%;
+}
+
+/* Keep the admin app's flex shell from creating a second horizontal viewport. */
+#root > div.flex.h-\[100dvh\] {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+#root > div.flex.h-\[100dvh\] > main {
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+#root > div.flex.h-\[100dvh\] > main > header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  min-width: 0;
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+  padding-bottom: 0.75rem;
+}
+
+#root > div.flex.h-\[100dvh\] > main > header > div {
+  min-width: 0;
+}
+
+#root > div.flex.h-\[100dvh\] > main > header button,
+#root > div.flex.h-\[100dvh\] > main > header a {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+#root > div.flex.h-\[100dvh\] > main > header img {
+  max-width: 7.25rem;
+}
+
+#root > div.flex.h-\[100dvh\] > main > div.flex-1.overflow-y-auto {
+  min-height: 0;
+  min-width: 0;
+  flex: 1 1 0%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: none;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+}
+
+/* The existing shell already controls open/closed state. Make the drawer
+   comfortable on narrow screens and correct its RTL/LTR slide direction. */
+.fixed.top-0.end-0.z-50 {
+  width: min(85vw, 22rem);
+  max-width: 100%;
+  min-width: 0;
+  will-change: transform;
+  overscroll-behavior: contain;
+  overflow: hidden;
+}
+
+.fixed.top-0.end-0.z-50 > div.w-\[272px\] {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+.fixed.top-0.end-0.z-50 nav a {
+  min-height: 48px;
+  display: block;
+}
+
+.fixed.top-0.end-0.z-50 nav a > div {
+  min-height: 48px;
+}
+
+/* The product convention is right-side Arabic and left-side French/English.
+   The bundle uses a logical `end-0` class, so override the physical edge
+   here to keep the drawer aligned with the selected language. */
+[dir='rtl'] .fixed.top-0.end-0.z-50.translate-x-full {
+  right: 0;
+  left: auto;
+  inset-inline-start: auto;
+  inset-inline-end: auto;
+  translate: none;
+  transform: translateX(100%);
+}
+
+[dir='rtl'] .fixed.top-0.end-0.z-50.translate-x-0 {
+  right: 0;
+  left: auto;
+  inset-inline-start: auto;
+  inset-inline-end: auto;
+  translate: none;
+  transform: translateX(0);
+}
+
+[dir='ltr'] .fixed.top-0.end-0.z-50.translate-x-full {
+  left: 0;
+  right: auto;
+  inset-inline-start: auto;
+  inset-inline-end: auto;
+  translate: none;
+  transform: translateX(-100%);
+}
+
+[dir='ltr'] .fixed.top-0.end-0.z-50.translate-x-0 {
+  left: 0;
+  right: auto;
+  inset-inline-start: auto;
+  inset-inline-end: auto;
+  translate: none;
+  transform: translateX(0);
+}
+
+/* Keep the drawer flush with its logical edge even when the imported bundle
+   renders `end-0` as a physical right edge. */
+[dir='rtl'] .fixed.top-0.end-0.z-50 {
+  right: 0;
+  left: auto;
+}
+
+[dir='ltr'] .fixed.top-0.end-0.z-50 {
+  left: 0;
+  right: auto;
+}
+
+.fixed.top-0.end-0.z-50.translate-x-full {
+  pointer-events: none;
+}
+
+.fixed.top-0.end-0.z-50.translate-x-0 {
+  pointer-events: auto;
+}
+
+/* During a pointer gesture the touch helper owns the transform. */
+.fixed.top-0.end-0.z-50.is-dragging {
+  transition: none !important;
+  translate: none !important;
+}
+
+/* Prevent long names, email addresses and translated labels from widening
+   cards or the viewport. */
+#root > div.flex.h-\[100dvh\] main h1,
+#root > div.flex.h-\[100dvh\] main h2,
+#root > div.flex.h-\[100dvh\] main h3,
+#root > div.flex.h-\[100dvh\] main p,
+#root > div.flex.h-\[100dvh\] main td,
+#root > div.flex.h-\[100dvh\] main th {
+  overflow-wrap: anywhere;
+}
+
+#root > div.flex.h-\[100dvh\] main .min-w-0 {
+  min-width: 0;
+}
+
+/* Keep table containers bounded. On phones the table itself becomes a
+   labelled card list below; horizontal scrolling is reserved for exceptional
+   content such as a chart or an export preview. */
+#root > div.flex.h-\[100dvh\] main div:has(> table),
+#root > div.flex.h-\[100dvh\] main .overflow-x-auto {
+  max-width: 100%;
+  min-width: 0;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+#root > div.flex.h-\[100dvh\] main table {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* The salary page has six desktop columns. On a phone each record is a
+   self-contained card, so employee, amount, date, status and actions never
+   compete for the same narrow row. */
+#root > div.flex.h-\[100dvh\] main table[data-salary-table] {
+  min-width: 0;
+}
+
+#root > div.flex.h-\[100dvh\] main table[data-salary-table] td,
+#root > div.flex.h-\[100dvh\] main table[data-salary-table] th {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+  #root > div.flex.h-\[100dvh\] > main > header {
+    min-height: 64px;
+    gap: 0.35rem;
+    padding-inline: 0.65rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > header > div:first-child {
+    gap: 0.25rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > header [data-testid='button-open-menu'] {
+    flex: 0 0 44px;
+    padding: 0;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > header .ms-auto {
+    gap: 0.15rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] {
+    padding-inline: 0.15rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > div.flex-1.overflow-y-auto {
+    padding: 0.85rem 0.75rem max(1.5rem, env(safe-area-inset-bottom));
+  }
+
+  .fixed.top-0.end-0.z-50 {
+    width: min(85vw, 22rem);
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .rounded-\[26px\],
+  #root > div.flex.h-\[100dvh\] main .rounded-\[22px\] {
+    border-radius: 1.15rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .rounded-\[26px\] {
+    padding: 1rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .grid.grid-cols-2 {
+    gap: 0.65rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .card-enter {
+    padding: 0.8rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main button,
+  #root > div.flex.h-\[100dvh\] main a[role='button'],
+  .fixed.top-0.end-0.z-50 button,
+  .fixed.top-0.end-0.z-50 a {
+    min-height: 44px;
+  }
+
+  #root > div.flex.h-\[100dvh\] main input,
+  #root > div.flex.h-\[100dvh\] main select,
+  #root > div.flex.h-\[100dvh\] main textarea {
+    min-height: 44px;
+    max-width: 100%;
+  }
+
+}
+
+@media (max-width: 380px) {
+  #root > div.flex.h-\[100dvh\] > main > header {
+    padding-inline: 0.4rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > div.flex-1.overflow-y-auto {
+    padding-inline: 0.6rem;
+  }
+
+  .fixed.top-0.end-0.z-50 {
+    width: 85vw;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .grid.grid-cols-2 {
+    gap: 0.5rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .card-enter {
+    padding: 0.7rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .text-2xl {
+    font-size: 1.35rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fixed.top-0.end-0.z-50,
+  .fixed.inset-0.z-40 {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Admin content rhythm
+   These rules cover the employee, former-employee, salary, request and
+   violation screens, which are shipped as separate lazy-loaded pages.
+   ───────────────────────────────────────────────────────────────────────── */
+
+#root > div.flex.h-\[100dvh\] main > div.flex-1 > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#root > div.flex.h-\[100dvh\] main .space-y-6,
+#root > div.flex.h-\[100dvh\] main .space-y-7 {
+  width: 100%;
+  min-width: 0;
+}
+
+#root > div.flex.h-\[100dvh\] main .rounded-md.border,
+#root > div.flex.h-\[100dvh\] main .rounded-lg.border,
+#root > div.flex.h-\[100dvh\] main .rounded-2xl.border,
+#root > div.flex.h-\[100dvh\] main .rounded-\[22px\],
+#root > div.flex.h-\[100dvh\] main .rounded-\[26px\] {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+#root > div.flex.h-\[100dvh\] main .flex.items-start.justify-between,
+#root > div.flex.h-\[100dvh\] main .flex.items-center.justify-between,
+#root > div.flex.h-\[100dvh\] main .flex.justify-between {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+#root > div.flex.h-\[100dvh\] main .flex.justify-end {
+  flex-wrap: wrap;
+}
+
+#root > div.flex.h-\[100dvh\] main button,
+#root > div.flex.h-\[100dvh\] main a {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#root > div.flex.h-\[100dvh\] main input,
+#root > div.flex.h-\[100dvh\] main textarea,
+#root > div.flex.h-\[100dvh\] main select,
+#root > div.flex.h-\[100dvh\] main [role='combobox'] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Existing bundle utilities use `truncate` for names. On content cards,
+   wrapping is more useful than an ellipsis; tables still retain their own
+   horizontal safety container below. */
+#root > div.flex.h-\[100dvh\] main .truncate {
+  max-width: 100%;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#root > div.flex.h-\[100dvh\] main table {
+  width: 100%;
+  table-layout: auto;
+}
+
+#root > div.flex.h-\[100dvh\] main table td,
+#root > div.flex.h-\[100dvh\] main table th {
+  max-width: 20rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+#root > div.flex.h-\[100dvh\] main table .truncate {
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+#root > div.flex.h-\[100dvh\] main table td:last-child > div,
+#root > div.flex.h-\[100dvh\] main table th:last-child > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+#root > div.flex.h-\[100dvh\] main [role='tablist'],
+#root > div.flex.h-\[100dvh\] main [role='tablist'] > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#root > div.flex.h-\[100dvh\] main [role='tablist'] {
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+/* Keep the same visual language on every form control and action row,
+   including lazy-loaded employee, salary, request and violation pages. */
+#root > div.flex.h-\[100dvh\] main input,
+#root > div.flex.h-\[100dvh\] main select,
+#root > div.flex.h-\[100dvh\] main textarea,
+#root > div.flex.h-\[100dvh\] main [role='combobox'] {
+  border-radius: 0.8rem;
+  line-height: 1.45;
+}
+
+#root > div.flex.h-\[100dvh\] main button > svg,
+#root > div.flex.h-\[100dvh\] main a > svg {
+  flex: 0 0 auto;
+}
+
+#root > div.flex.h-\[100dvh\] main form label {
+  max-width: 100%;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+#root > div.flex.h-\[100dvh\] main [role='tab'],
+#root > div.flex.h-\[100dvh\] main [data-state='active'] {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Dialog and popover content is rendered in a portal, outside the main
+   content tree, so it needs its own shared mobile boundary. */
+[data-radix-dialog-content],
+[data-radix-popover-content],
+[role='dialog'] {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+[data-radix-dialog-content] button,
+[data-radix-dialog-content] a,
+[data-radix-popover-content] button,
+[data-radix-popover-content] a,
+[role='dialog'] button,
+[role='dialog'] a {
+  max-width: 100%;
+  white-space: normal;
+}
+
+/* Logical text alignment: the imported pages contain a few physical
+   `text-right` utilities. Keep Arabic right-aligned and French/English
+   left-aligned without changing numeric/action alignment where explicit. */
+#root > div.flex.h-\[100dvh\][dir='ltr'] main .text-right {
+  text-align: left;
+}
+
+#root > div.flex.h-\[100dvh\][dir='rtl'] main .text-left {
+  text-align: right;
+}
+
+#root > div.flex.h-\[100dvh\] main .text-start {
+  text-align: start;
+}
+
+#root > div.flex.h-\[100dvh\] main .text-end {
+  text-align: end;
+}
+
+@media (min-width: 768px) {
+  #root > div.flex.h-\[100dvh\] main > div.flex-1.overflow-y-auto {
+    padding-inline: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  #root > div.flex.h-\[100dvh\] main .space-y-6,
+  #root > div.flex.h-\[100dvh\] main .space-y-7 {
+    max-width: 120rem;
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  [role='dialog'] {
+    width: min(calc(100vw - 1.5rem), 42rem) !important;
+    max-width: calc(100vw - 1.5rem) !important;
+    max-height: calc(100dvh - 1.5rem);
+    overflow-y: auto;
+  }
+
+  [role='dialog'] form .grid,
+  [role='dialog'] .grid.grid-cols-2,
+  [role='dialog'] .grid.grid-cols-3,
+  [role='dialog'] .grid.grid-cols-4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #root > div.flex.h-\[100dvh\] main h1 {
+    font-size: clamp(1.45rem, 6vw, 2rem);
+    line-height: 1.3;
+  }
+
+  #root > div.flex.h-\[100dvh\] main h2 {
+    font-size: clamp(1.1rem, 5vw, 1.45rem);
+    line-height: 1.35;
+  }
+
+  #root > div.flex.h-\[100dvh\] main h3 {
+    font-size: clamp(1rem, 4.2vw, 1.2rem);
+    line-height: 1.4;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .p-4.sm\:p-6 {
+    padding: 0.9rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .p-5,
+  #root > div.flex.h-\[100dvh\] main .p-6 {
+    padding: 1rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .gap-6 {
+    gap: 1rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .mb-6 {
+    margin-bottom: 1rem;
+  }
+
+  /* Search/filter rows and employee/salary/request action rows become a
+     single readable column before they can squeeze into each other. */
+  #root > div.flex.h-\[100dvh\] main .flex.flex-col.sm\:flex-row,
+  #root > div.flex.h-\[100dvh\] main .flex.sm\:flex-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .flex.flex-col.sm\:flex-row > *,
+  #root > div.flex.h-\[100dvh\] main .flex.sm\:flex-row > * {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .flex.flex-wrap {
+    row-gap: 0.55rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .flex.items-center.gap-2,
+  #root > div.flex.h-\[100dvh\] main .flex.items-center.gap-3 {
+    min-width: 0;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .flex.items-center.gap-2 > *,
+  #root > div.flex.h-\[100dvh\] main .flex.items-center.gap-3 > * {
+    min-width: 0;
+  }
+
+  /* Dialog forms and employee/violation detail grids stack on a phone. */
+  #root > div.flex.h-\[100dvh\] main .grid.grid-cols-2,
+  #root > div.flex.h-\[100dvh\] main .grid.grid-cols-3,
+  #root > div.flex.h-\[100dvh\] main .grid.grid-cols-4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #root > div.flex.h-\[100dvh\] main .col-span-2 {
+    grid-column: auto;
+  }
+
+  #root > div.flex.h-\[100dvh\] main [role='tablist'] > *,
+  #root > div.flex.h-\[100dvh\] main [role='tab'] {
+    min-height: 42px;
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  #root > div.flex.h-\[100dvh\] main [role='tablist'] > button,
+  #root > div.flex.h-\[100dvh\] main [role='tablist'] > a {
+    min-width: min(7rem, 100%);
+  }
+
+  #root > div.flex.h-\[100dvh\] main table td,
+  #root > div.flex.h-\[100dvh\] main table th {
+    padding: 0.65rem 0.75rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table td:last-child > div,
+  #root > div.flex.h-\[100dvh\] main table th:last-child > div {
+    justify-content: flex-start;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table button {
+    min-width: 42px;
+  }
+
+  /* Let names, offices, reasons and salary descriptions use their full
+     available card width instead of being hidden by utility truncation. */
+  #root > div.flex.h-\[100dvh\] main .max-w-\[200px\],
+  #root > div.flex.h-\[100dvh\] main .max-w-\[150px\],
+  #root > div.flex.h-\[100dvh\] main .max-w-md,
+  #root > div.flex.h-\[100dvh\] main .max-w-lg {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  #root > div.flex.h-\[100dvh\] main .grid.grid-cols-2,
+  #root > div.flex.h-\[100dvh\] main .grid.grid-cols-3,
+  #root > div.flex.h-\[100dvh\] main .grid.grid-cols-4 {
+    gap: 0.65rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .p-4.sm\:p-6,
+  #root > div.flex.h-\[100dvh\] main .p-5,
+  #root > div.flex.h-\[100dvh\] main .p-6 {
+    padding: 0.8rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main button,
+  #root > div.flex.h-\[100dvh\] main a[role='button'] {
+    min-height: 44px;
+  }
+
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Mobile record cards
+   The small companion script supplies data-label from the translated table
+   header, so Arabic, French and English remain correct without hard-coded
+   language-specific selectors.
+   ───────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  #root > div.flex.h-\[100dvh\] main div:has(> table),
+  #root > div.flex.h-\[100dvh\] main .overflow-x-auto {
+    overflow-x: visible;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .flex.overflow-x-auto {
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main [class*='w-[180px]'],
+  #root > div.flex.h-\[100dvh\] main [class*='w-[200px]'],
+  #root > div.flex.h-\[100dvh\] main [class*='w-[320px]'] {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: auto;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] thead {
+    display: none;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] tbody {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    gap: 0.75rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.9rem;
+    background: hsl(var(--card));
+    box-shadow: 0 2px 8px rgb(15 23 42 / 0.04);
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-salary-table] tr {
+    gap: 0;
+    border-radius: 1rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-salary-table] td {
+    grid-template-columns: minmax(6.5rem, 36%) minmax(0, 1fr);
+    align-items: center;
+    padding: 0.78rem 0.85rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-salary-table] td:first-child {
+    background: hsl(var(--muted) / 0.35);
+    font-weight: 700;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-salary-table] td:last-child {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-salary-table] td:last-child::before {
+    display: block;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td {
+    display: grid;
+    grid-template-columns: minmax(6.25rem, 38%) minmax(0, 1fr);
+    gap: 0.7rem;
+    align-items: start;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    padding: 0.72rem 0.8rem;
+    border: 0;
+    text-align: start;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td + td {
+    border-top: 1px solid hsl(var(--border) / 0.7);
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td::before {
+    content: attr(data-label);
+    min-width: 0;
+    color: hsl(var(--muted-foreground));
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.45;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td > * {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td[colspan] {
+    display: block;
+    padding: 1.1rem 0.85rem;
+    text-align: center;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td[colspan]::before {
+    display: none;
+    content: none;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] tr:has(td[colspan]) {
+    display: block;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td:last-child > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td:last-child button,
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td:last-child a {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  /* Long names and translated labels must wrap as whole words in Arabic. */
+  #root > div.flex.h-\[100dvh\][dir='rtl'] main,
+  #root > div.flex.h-\[100dvh\][dir='rtl'] main * {
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+
+  #root > div.flex.h-\[100dvh\][dir='rtl'] main .truncate {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
+/* Header profile: keep the trigger compact and keep its menu inside the
+   viewport in Arabic, French and English. */
+#root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] {
+  position: relative;
+  max-width: min(15rem, 42vw);
+  min-width: 44px;
+  overflow: hidden;
+}
+
+#root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] > span:last-child {
+  min-width: 0;
+  max-width: 9rem;
+}
+
+#root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] p {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] ~ div[role='menu'],
+#root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] ~ div {
+  max-width: min(calc(100vw - 1rem), 18rem);
+  min-width: min(13rem, calc(100vw - 1rem));
+  overflow-wrap: anywhere;
+}
+
+[data-radix-menu-content]:has([data-testid='link-profile-settings']),
+[role='menu']:has([data-testid='link-profile-settings']) {
+  max-width: min(calc(100vw - 1rem), 18rem);
+  min-width: min(13rem, calc(100vw - 1rem));
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+  #root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] {
+    max-width: 3.25rem;
+    padding: 0.15rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] > span:last-child {
+    display: none;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] ~ div[role='menu'],
+  #root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] ~ div {
+    position: fixed;
+    top: max(4.5rem, calc(env(safe-area-inset-top) + 4rem));
+    inset-inline-end: 0.75rem;
+    inset-inline-start: auto;
+    width: min(18rem, calc(100vw - 1.5rem));
+    min-width: 0;
+    max-height: calc(100dvh - 6rem);
+    overflow-y: auto;
+    z-index: 60;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [data-radix-menu-content]:has([data-testid='link-profile-settings']),
+  [role='menu']:has([data-testid='link-profile-settings']) {
+    position: fixed;
+    top: max(4.5rem, calc(env(safe-area-inset-top) + 4rem));
+    inset-inline-end: 0.75rem;
+    inset-inline-start: auto;
+    width: min(18rem, calc(100vw - 1.5rem));
+    min-width: 0;
+    max-height: calc(100dvh - 6rem);
+    overflow-y: auto;
+    z-index: 60;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 380px) {
+  #root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] ~ div[role='menu'],
+  #root > div.flex.h-\[100dvh\] > main > header [data-testid='button-profile'] ~ div {
+    inset-inline-end: 0.5rem;
+    width: calc(100vw - 1rem);
+  }
+
+  [data-radix-menu-content]:has([data-testid='link-profile-settings']),
+  [role='menu']:has([data-testid='link-profile-settings']) {
+    inset-inline-end: 0.5rem;
+    width: calc(100vw - 1rem);
+  }
+}
+
+/* Final mobile boundary: keep the entire admin shell inside the viewport.
+   This is intentionally last so it wins over fixed desktop utility widths. */
+html,
+body,
+#root,
+#root > div,
+#root > div.flex.h-\[100dvh\],
+#root > div.flex.h-\[100dvh\] > main,
+#root > div.flex.h-\[100dvh\] > main > header,
+#root > div.flex.h-\[100dvh\] > main > div {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden !important;
+}
+
+#root > div.flex.h-\[100dvh\] {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#root > div.flex.h-\[100dvh\] > main {
+  flex: 1 1 auto;
+  overflow-x: hidden;
+}
+
+#root > div.flex.h-\[100dvh\] > main > div.flex-1.overflow-y-auto {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#root > div.flex.h-\[100dvh\] main img,
+#root > div.flex.h-\[100dvh\] main svg,
+#root > div.flex.h-\[100dvh\] main canvas,
+#root > div.flex.h-\[100dvh\] main video,
+#root > div.flex.h-\[100dvh\] main iframe,
+#root > div.flex.h-\[100dvh\] main input,
+#root > div.flex.h-\[100dvh\] main textarea,
+#root > div.flex.h-\[100dvh\] main select,
+#root > div.flex.h-\[100dvh\] main button,
+#root > div.flex.h-\[100dvh\] main a {
+  max-width: 100%;
+}
+
+#root > div.flex.h-\[100dvh\] main img,
+#root > div.flex.h-\[100dvh\] main canvas,
+#root > div.flex.h-\[100dvh\] main video,
+#root > div.flex.h-\[100dvh\] main iframe {
+  height: auto;
+}
+
+#root > div.flex.h-\[100dvh\] main *,
+#root > div.flex.h-\[100dvh\] .fixed.top-0.end-0.z-50 * {
+  min-width: 0;
+  max-width: 100%;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+/* Do not let a content row make the page wider than the phone. */
+#root > div.flex.h-\[100dvh\] main .flex,
+#root > div.flex.h-\[100dvh\] main .grid {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  #root > div.flex.h-\[100dvh\] > main > header {
+    width: 100%;
+    padding-inline: max(0.75rem, env(safe-area-inset-left)) max(0.75rem, env(safe-area-inset-right));
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > header > div {
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > div.flex-1.overflow-y-auto {
+    width: 100%;
+    padding-inline: max(0.75rem, env(safe-area-inset-left)) max(0.75rem, env(safe-area-inset-right));
+  }
+
+  #root > div.flex.h-\[100dvh\] main .flex.items-center.justify-between,
+  #root > div.flex.h-\[100dvh\] main .flex.items-start.justify-between,
+  #root > div.flex.h-\[100dvh\] main .flex.justify-between {
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .grid[class*='grid-cols-'],
+  #root > div.flex.h-\[100dvh\] main .grid[class*='sm\\:grid-cols-'],
+  #root > div.flex.h-\[100dvh\] main .grid[class*='md\\:grid-cols-'] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .flex[class*='sm\\:flex-row'],
+  #root > div.flex.h-\[100dvh\] main .flex[class*='md\\:flex-row'] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .flex[class*='sm\\:flex-row'] > *,
+  #root > div.flex.h-\[100dvh\] main .flex[class*='md\\:flex-row'] > * {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #root > div.flex.h-\[100dvh\] main [class*='w-[180px]'],
+  #root > div.flex.h-\[100dvh\] main [class*='w-[200px]'],
+  #root > div.flex.h-\[100dvh\] main [class*='w-[240px]'],
+  #root > div.flex.h-\[100dvh\] main [class*='w-[280px]'],
+  #root > div.flex.h-\[100dvh\] main [class*='w-[320px]'],
+  #root > div.flex.h-\[100dvh\] main [class*='min-w-'] {
+    width: 100%;
+    min-width: 0 !important;
+    max-width: 100%;
+  }
+
+  #root > div.flex.h-\[100dvh\] main [role='tablist'] {
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    overflow-x: hidden;
+  }
+
+  #root > div.flex.h-\[100dvh\] main [role='tablist'] > *,
+  #root > div.flex.h-\[100dvh\] main [role='tab'] {
+    min-width: 0 !important;
+    flex: 1 1 8rem;
+    max-width: 100%;
+  }
+
+  /* Tables become labelled cards. Any genuinely wide table can still scroll
+     only inside its own wrapper, never across the page. */
+  #root > div.flex.h-\[100dvh\] main div:has(> table),
+  #root > div.flex.h-\[100dvh\] main .overflow-x-auto {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .flex.overflow-x-auto {
+    overflow-x: hidden;
+    flex-wrap: wrap;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] {
+    width: 100%;
+    min-width: 0 !important;
+    max-width: 100%;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] tr,
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td,
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] th {
+    min-width: 0 !important;
+    max-width: 100%;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td {
+    grid-template-columns: minmax(5.5rem, 35%) minmax(0, 1fr);
+  }
+
+  #root > div.flex.h-\[100dvh\] main [role='dialog'] {
+    width: calc(100vw - 1rem) !important;
+    max-width: calc(100vw - 1rem) !important;
+    margin-inline: auto;
+  }
+
+  /* The admin announcement screen is mounted outside the shell. */
+  .dhd-admin-page,
+  .dhd-admin-header,
+  .dhd-admin-content,
+  .dhd-admin-title,
+  .dhd-announcement-form,
+  .dhd-admin-list,
+  .dhd-admin-row,
+  .dhd-admin-row-main,
+  .dhd-admin-row-side {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .dhd-admin-header,
+  .dhd-admin-title,
+  .dhd-admin-row {
+    flex-wrap: wrap;
+    gap: 0.85rem;
+  }
+
+  .dhd-admin-content {
+    padding-inline: 0.75rem;
+  }
+
+  .dhd-admin-title > *,
+  .dhd-admin-row-main,
+  .dhd-admin-row-side {
+    flex: 1 1 100%;
+  }
+
+  .dhd-admin-row-side {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .dhd-admin-row-side > div {
+    flex-wrap: wrap;
+  }
+
+  .dhd-form-grid,
+  .dhd-employee-picker {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dhd-announcement-form input:not([type='checkbox']),
+  .dhd-announcement-form textarea,
+  .dhd-announcement-form select,
+  .dhd-admin-form-actions,
+  .dhd-admin-form-actions button {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .dhd-admin-form-actions {
+    flex-wrap: wrap;
+  }
+
+  .fixed.top-0.end-0.z-50 {
+    width: min(86vw, 22rem) !important;
+    max-width: calc(100vw - 0.5rem) !important;
+    height: 100dvh;
+  }
+
+  .fixed.top-0.end-0.z-50 > div.w-\[272px\] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 430px) {
+  #root > div.flex.h-\[100dvh\] > main > header,
+  #root > div.flex.h-\[100dvh\] > main > div.flex-1.overflow-y-auto {
+    padding-inline: 0.6rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .p-5,
+  #root > div.flex.h-\[100dvh\] main .p-6,
+  #root > div.flex.h-\[100dvh\] main .p-4.sm\:p-6 {
+    padding: 0.75rem;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table[data-responsive-table] td {
+    grid-template-columns: minmax(4.75rem, 32%) minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .dhd-admin-title {
+    padding: 1rem;
+  }
+
+  .dhd-admin-title h1 {
+    font-size: 1.45rem;
+  }
+}
+
+/* Language-independent mobile contract.
+   The imported admin bundle changes documentElement.dir when the language
+   changes. These rules deliberately keep the same breakpoint/layout tree for
+   Arabic, French, and English; direction only changes text and inline flow. */
+@media (max-width: 767px) {
+  html,
+  body,
+  #root,
+  #root > div.flex.h-\[100dvh\],
+  #root > div.flex.h-\[100dvh\] > main {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  #root > div.flex.h-\[100dvh\] {
+    display: flex;
+    flex-direction: row;
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > div.flex-1.overflow-y-auto {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-x: none;
+  }
+
+  /* Do not let direction-dependent flex sizing recreate the desktop shell. */
+  #root > div.flex.h-\[100dvh\] main .flex,
+  #root > div.flex.h-\[100dvh\] main .grid,
+  #root > div.flex.h-\[100dvh\] main [class*='rounded'] {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .flex[class*='flex-row'],
+  #root > div.flex.h-\[100dvh\] main .grid[class*='grid-cols-'] {
+    flex-wrap: wrap;
+  }
+
+  #root > div.flex.h-\[100dvh\] main .flex[class*='flex-row'] > *,
+  #root > div.flex.h-\[100dvh\] main .grid[class*='grid-cols-'] > * {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #root > div.flex.h-\[100dvh\] main table {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #root > div.flex.h-\[100dvh\] main div:has(> table),
+  #root > div.flex.h-\[100dvh\] main .overflow-x-auto {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  /* Arabic glyphs must remain in normal horizontal writing mode. */
+  #root > div.flex.h-\[100dvh\][dir='rtl'] main,
+  #root > div.flex.h-\[100dvh\][dir='rtl'] main * ,
+  html[dir='rtl'] #root > div.flex.h-\[100dvh\] main,
+  html[dir='rtl'] #root > div.flex.h-\[100dvh\] main * {
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Arabic drawer: fixed to the right, closed off-canvas, never part of
+     document flow. The same component remains on the left for LTR. */
+  html[dir='rtl'] .fixed.top-0.end-0.z-50,
+  [dir='rtl'] .fixed.top-0.end-0.z-50 {
+    position: fixed !important;
+    right: 0 !important;
+    left: auto !important;
+    width: min(86vw, 22rem) !important;
+    max-width: calc(100vw - 0.5rem) !important;
+    min-width: 0 !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+  }
+
+  html[dir='rtl'] .fixed.top-0.end-0.z-50.translate-x-full,
+  [dir='rtl'] .fixed.top-0.end-0.z-50.translate-x-full {
+    transform: translateX(100%) !important;
+  }
+
+  html[dir='rtl'] .fixed.top-0.end-0.z-50.translate-x-0,
+  [dir='rtl'] .fixed.top-0.end-0.z-50.translate-x-0 {
+    transform: translateX(0) !important;
+  }
+
+  html[dir='rtl'] .fixed.top-0.end-0.z-50 > div,
+  [dir='rtl'] .fixed.top-0.end-0.z-50 > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+    touch-action: pan-y;
+  }
+}
+
+/*
+ * On phones, use one native document scroller instead of a fixed-height
+ * shell with a nested scroller. Nested touch scrollers can lose the upward
+ * gesture in mobile browsers when they reach a boundary.
+ */
+@media (max-width: 767px) {
+  html,
+  body {
+    height: auto !important;
+    min-height: 100%;
+    overflow-y: auto !important;
+    overscroll-behavior-y: none;
+  }
+
+  #root {
+    min-height: 100dvh;
+    height: auto !important;
+  }
+
+  #root > div.flex.h-\[100dvh\] {
+    height: auto !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main {
+    display: block;
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible !important;
+  }
+
+  #root > div.flex.h-\[100dvh\] > main > div.flex-1.overflow-y-auto {
+    display: block;
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overscroll-behavior-y: none;
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
+  }
+}
+
+/*
+ * Mobile scroll contract
+ *
+ * The admin bundle owns a desktop-style flex viewport with an inner
+ * `overflow-y-auto` region. That is useful on a large screen, but it creates
+ * two competing touch scrollers on phones. Keep the drawer fixed when it is
+ * open, while making the document itself the only page scroller everywhere
+ * else. This block is intentionally last so it wins over the utility classes
+ * emitted by the imported bundle and over the older compatibility rules above.
+ */
+@media (max-width: 767px) {
+  html,
+  body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-y: auto !important;
+    scroll-behavior: auto !important;
+    touch-action: auto !important;
+  }
+
+  body {
+    position: static !important;
+  }
+
+  #root {
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible !important;
+    touch-action: auto !important;
+  }
+
+  #root > [class~="h-[100dvh]"] {
+    display: block !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    max-height: none !important;
+    overflow: visible !important;
+    touch-action: auto !important;
+  }
+
+  #root > [class~="h-[100dvh]"] > main {
+    display: block !important;
+    height: auto !important;
+    min-height: 100dvh !important;
+    overflow: visible !important;
+    touch-action: auto !important;
+  }
+
+  #root > [class~="h-[100dvh]"] > main > [class~="overflow-y-auto"] {
+    display: block !important;
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overscroll-behavior-y: auto !important;
+    touch-action: auto !important;
+    -webkit-overflow-scrolling: auto;
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom) + 1rem);
+  }
+
+  /* Employee pages use a fixed bottom navigation bar. Reserve space for it
+     in normal document flow so the last card is never covered. */
+  #root > .employee-shell {
+    min-height: 100dvh !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding-bottom: calc(4.25rem + env(safe-area-inset-bottom)) !important;
+    touch-action: auto !important;
+  }
+
+  #root > .employee-shell > header {
+    touch-action: auto !important;
+  }
+
+  /* The drawer and dialogs are intentional, bounded interaction surfaces.
+     They remain independently scrollable only while open. */
+  #root > [class~="h-[100dvh]"] > [class~="fixed"][class~="top-0"][class~="end-0"] {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    touch-action: auto !important;
+  }
+
+  #root > [class~="h-[100dvh]"] > [class~="fixed"][class~="top-0"][class~="end-0"] > * {
+    max-height: 100% !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
